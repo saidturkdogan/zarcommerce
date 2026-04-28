@@ -13,11 +13,11 @@
 
 	<modules>
 		<module>api-gateway</module>
-		<module>service-user</module>
-		<module>service-product</module>
-		<module>service-cart</module>
-		<module>service-order</module>
-		<module>service-recommendation</module>
+		<module>user-service</module>
+		<module>product-service</module>
+		<module>cart-service</module>
+		<module>order-service</module>
+		<module>recommendation-service</module>
 	</modules>
 
 </project>

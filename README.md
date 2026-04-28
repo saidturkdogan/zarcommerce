@@ -6,7 +6,7 @@ ZarCommerce, modüler mikroservis mimarisine dayanan, kullanıcılara özelleşt
 
 Proje temel olarak iki ana bölüme ayrılmıştır:
 
-1. **Backend (`/backend`)**: Java Spring Boot kullanılarak geliştirilmiş mikroservisler (User, Product, Cart, Order, Recommendation) ve API Gateway.
+1. **Backend (`/backend`)**: Java Spring Boot kullanılarak geliştirilmiş mikroservisler (`user-service`, `product-service`, `cart-service`, `order-service`, `recommendation-service`) ve API Gateway.
 2. **Frontend (`/frontend`)**: 
    - **main-site**: Müşteriler için SEO uyumlu ve hızlı çalışan Next.js uygulaması.
    - **admin-panel**: Sistem yöneticileri için geliştirilmiş hızlı SPA yapısına sahip Vite & React tabanlı gösterge paneli.
