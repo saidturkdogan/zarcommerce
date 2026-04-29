@@ -1,0 +1,17 @@
+{
+  "HomePage": {
+    "title": "Alışverişte <span>Şansını</span> Kendin Yarat",
+    "subtitle": "Yüz binlerce ürün, sana özel fırsatlar ve sürpriz indirimlerle dolu yeni nesil e-ticaret deneyimine hoş geldin.",
+    "slogan": "n11 ile alışverişin yeni yolu",
+    "searchPlaceholder": "Ne aramıştınız? (Örn: iPhone 15)",
+    "searchButton": "Ara",
+    "campaigns": "Kampanyalar",
+    "categories": "Kategoriler",
+    "foryou": "Sana Özel",
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "dealsOfDay": "Günün Fırsatları",
+    "seeAll": "Tümünü Gör →",
+    "discount": "%25 İndirim"
+  }
+}

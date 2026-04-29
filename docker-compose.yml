@@ -14,6 +14,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - zarcommerce_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zarcommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -24,6 +29,136 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - zarcommerce_net
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: zarcommerce_api_gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - zarcommerce_net
+    depends_on:
+      - user-service
+      - product-service
+      - cart-service
+      - order-service
+      - recommendation-service
+
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: zarcommerce_user_service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+    networks:
+      - zarcommerce_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  product-service:
+    build:
+      context: ./backend/product-service
+      dockerfile: Dockerfile
+    container_name: zarcommerce_product_service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+    networks:
+      - zarcommerce_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cart-service:
+    build:
+      context: ./backend/cart-service
+      dockerfile: Dockerfile
+    container_name: zarcommerce_cart_service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+    networks:
+      - zarcommerce_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  order-service:
+    build:
+      context: ./backend/order-service
+      dockerfile: Dockerfile
+    container_name: zarcommerce_order_service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    networks:
+      - zarcommerce_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  recommendation-service:
+    build:
+      context: ./backend/recommendation-service
+      dockerfile: Dockerfile
+    container_name: zarcommerce_recommendation_service
+    ports:
+      - "8085:8085"
+    networks:
+      - zarcommerce_net
+
+  main-site:
+    build:
+      context: ./frontend/main-site
+      dockerfile: Dockerfile
+    container_name: zarcommerce_main_site
+    ports:
+      - "3000:3000"
+    environment:
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend/main-site:/app
+      - /app/node_modules
+    networks:
+      - zarcommerce_net
+
+  admin-panel:
+    build:
+      context: ./frontend/admin-panel
+      dockerfile: Dockerfile
+    container_name: zarcommerce_admin_panel
+    ports:
+      - "80:5173"
+    volumes:
+      - ./frontend/admin-panel:/app
+      - /app/node_modules
     networks:
       - zarcommerce_net
 
