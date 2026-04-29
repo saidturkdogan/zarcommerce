@@ -1,5 +1,7 @@
 # ZarCommerce - E-Ticaret Uygulaması
 
+![ZarCommerce Logo](./frontend/main-site/public/next.svg)
+
 ZarCommerce, modüler mikroservis mimarisine dayanan, kullanıcılara özelleştirilmiş ve dinamik alışveriş deneyimi sunmayı hedefleyen kapsamlı bir e-ticaret platformudur.
 
 ## Proje Yapısı
