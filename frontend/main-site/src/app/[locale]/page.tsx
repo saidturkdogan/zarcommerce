@@ -1,6 +1,7 @@
 import {Link} from "../../i18n/routing";
 import Image from "next/image";
 import {useTranslations} from 'next-intl';
+import ProductGrid from "./ProductGrid";
 
 export default function Home() {
   const t = useTranslations('HomePage');
@@ -104,42 +105,7 @@ export default function Home() {
               <Link href="#" className="text-brand-purple font-medium hover:underline">{t('seeAll')}</Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="group rounded-3xl border border-gray-100 overflow-hidden bg-white hover:shadow-2xl hover:shadow-brand-purple/10 transition-all duration-300">
-                  <div className="aspect-[4/5] bg-gray-50 relative overflow-hidden flex items-center justify-center">
-                    {/* Placeholder for product image */}
-                    <div className="text-gray-300 group-hover:scale-110 transition-transform duration-500">
-                      <svg xmlns="http://www.w3.org/2001/XMLSchema-instance" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    {/* Badge */}
-                    <div className="absolute top-4 left-4 bg-brand-yellow text-brand-dark text-xs font-bold px-3 py-1 rounded-full">
-                      {t('discount')}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-semibold text-brand-dark mb-2 line-clamp-2 group-hover:text-brand-purple transition-colors">
-                      Premium Kablosuz Kulaklık Aktif Gürültü Engelleyici
-                    </h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex text-brand-yellow text-sm">★★★★★</div>
-                      <span className="text-xs text-brand-dark/50">(128)</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm text-brand-dark/50 line-through">2.999 TL</span>
-                        <div className="text-xl font-bold text-brand-purple">1.499 TL</div>
-                      </div>
-                      <button className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-brand-dark hover:bg-brand-purple hover:text-white transition-colors">
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductGrid />
           </div>
         </section>
       </main>

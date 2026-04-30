@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: zarcommerce
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -155,7 +155,10 @@ services:
       dockerfile: Dockerfile
     container_name: zarcommerce_admin_panel
     ports:
-      - "80:5173"
+      - "8088:5173"
+    environment:
+      - VITE_USER_API_BASE_URL=http://localhost:8081
+      - VITE_PRODUCT_API_BASE_URL=http://localhost:8082
     volumes:
       - ./frontend/admin-panel:/app
       - /app/node_modules
