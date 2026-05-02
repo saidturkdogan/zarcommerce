@@ -116,6 +116,11 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_RABBITMQ_HOST=rabbitmq
+      # Iyzico Sandbox - replace with your actual sandbox keys
+      - IYZICO_API_KEY=sandbox-afXhSzHFiClOVTIYmNmzitmOz9GnTKPM
+      - IYZICO_SECRET_KEY=sandbox-KPGX0EC3rNbcBjFomusmA2hxeMrcnuZp
+      - IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
+      - IYZICO_CALLBACK_URL=http://localhost:8084/api/v1/payments/callback
     networks:
       - zarcommerce_net
     depends_on:
