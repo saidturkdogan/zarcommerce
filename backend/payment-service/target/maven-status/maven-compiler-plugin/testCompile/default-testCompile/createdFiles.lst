@@ -1,0 +1,3 @@
+com\zarcommerce\service_payment\service\PaymentServiceTest.class
+com\zarcommerce\service_payment\config\GlobalExceptionHandlerTest.class
+com\zarcommerce\service_payment\controller\PaymentControllerTest.class
