@@ -9,6 +9,7 @@ import com.zarcommerce.service_payment.dto.PaymentRequest;
 import com.zarcommerce.service_payment.dto.PaymentStatusResponse;
 import com.zarcommerce.service_payment.entity.Payment;
 import com.zarcommerce.service_payment.enums.PaymentStatus;
+import com.zarcommerce.service_payment.messaging.PaymentEventPublisher;
 import com.zarcommerce.service_payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class PaymentService {
 
     private final Options iyzicoOptions;
     private final PaymentRepository paymentRepository;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     @Value("${iyzico.callback-url}")
     private String callbackUrl;
@@ -118,6 +120,7 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
+            paymentEventPublisher.publishPaymentCompleted(payment);
             return frontendBaseUrl + "/payment/result?status=success&paymentId=" + payment.getId();
         }
         return frontendBaseUrl + "/payment/result?status=failure&paymentId=" + payment.getId();

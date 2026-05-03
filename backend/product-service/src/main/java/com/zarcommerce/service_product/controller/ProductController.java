@@ -42,7 +42,7 @@ public class ProductController {
         return productService.getProductsPage(pageable, search, category);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ProductResponse getProduct(@PathVariable Long id) {
         return productService.getProductById(id);
     }
@@ -52,12 +52,12 @@ public class ProductController {
         return productService.createProduct(request);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public ProductResponse updateProduct(@PathVariable Long id, @RequestBody UpdateProductRequest request) {
         return productService.updateProduct(id, request);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public void deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
     }

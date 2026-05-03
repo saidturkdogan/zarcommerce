@@ -11,6 +11,11 @@ ZarCommerce, mikroservis mimarisi ile geliştirilmiş bir e-ticaret platformudur
 - İngilizce: `README.md`
 - Türkçe: `README_tr.md`
 
+## Canlı demo
+
+- Mağaza: [zarcommerce-five.vercel.app/tr](https://zarcommerce-five.vercel.app/tr)
+- Yönetim paneli: [zarcommerce-admin.vercel.app](https://zarcommerce-admin.vercel.app/)
+
 ## Genel Bakış
 
 Proje iki ana bölümden oluşur:

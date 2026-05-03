@@ -1,11 +1,15 @@
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\config\GlobalExceptionHandler.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\config\IyzicoConfig.java
+C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\config\RabbitMqConfig.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\controller\PaymentController.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\dto\PaymentInitResponse.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\dto\PaymentRequest.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\dto\PaymentStatusResponse.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\entity\Payment.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\enums\PaymentStatus.java
+C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\messaging\PaymentCompletedEvent.java
+C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\messaging\PaymentEventPublisher.java
+C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\messaging\ZarcommerceEvents.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\repository\PaymentRepository.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\service\PaymentService.java
 C:\Users\PC\Desktop\zarcommerce\backend\payment-service\src\main\java\com\zarcommerce\service_payment\ServicePaymentApplication.java

@@ -10,6 +10,7 @@ import com.zarcommerce.service_payment.dto.PaymentRequest;
 import com.zarcommerce.service_payment.dto.PaymentStatusResponse;
 import com.zarcommerce.service_payment.entity.Payment;
 import com.zarcommerce.service_payment.enums.PaymentStatus;
+import com.zarcommerce.service_payment.messaging.PaymentEventPublisher;
 import com.zarcommerce.service_payment.repository.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,11 +25,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static com.zarcommerce.service_payment.enums.PaymentStatus.INITIALIZED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,12 +41,14 @@ class PaymentServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private Options iyzicoOptions;
+    @Mock
+    private PaymentEventPublisher paymentEventPublisher;
 
     private PaymentService service;
 
     @BeforeEach
     void setup() {
-        service = new PaymentService(iyzicoOptions, paymentRepository);
+        service = new PaymentService(iyzicoOptions, paymentRepository, paymentEventPublisher);
         ReflectionTestUtils.setField(service, "callbackUrl", "http://localhost:8085/callback");
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "http://localhost:3000");
     }
@@ -103,6 +108,7 @@ class PaymentServiceTest {
         assertThat(response.getCheckoutFormContent()).isEqualTo("<html/>");
         assertThat(response.getPaymentId()).isEqualTo(101L);
         assertThat(response.getConversationId()).isNotBlank();
+        verifyNoInteractions(paymentEventPublisher);
     }
 
     @Test
@@ -130,12 +136,17 @@ class PaymentServiceTest {
         assertThat(captor.getValue().getErrorMessage()).isEqualTo("invalid");
         assertThat(response.getStatus()).isEqualTo("failure");
         assertThat(response.getPaymentId()).isEqualTo(202L);
+        verifyNoInteractions(paymentEventPublisher);
     }
 
     @Test
     void handleCallbackUpdatesPaymentToSuccessAndReturnsRedirect() {
         Payment payment = Payment.builder()
-                .id(7L).token("tk").status(PaymentStatus.INITIALIZED).build();
+                .id(7L).token("tk").status(PaymentStatus.INITIALIZED)
+                .conversationId("conv-1").buyerEmail("ada@example.com").buyerName("Ada L")
+                .price(new BigDecimal("99.90"))
+                .paidPrice(new BigDecimal("99.90")).currency("TRY")
+                .build();
         when(paymentRepository.findByToken("tk")).thenReturn(Optional.of(payment));
 
         CheckoutForm form = new CheckoutForm();
@@ -152,6 +163,7 @@ class PaymentServiceTest {
         }
 
         verify(paymentRepository).save(payment);
+        verify(paymentEventPublisher).publishPaymentCompleted(payment);
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
         assertThat(payment.getIyzicoPaymentId()).isEqualTo("iyz-99");
         assertThat(payment.getFraudStatus()).isEqualTo(1);
@@ -161,7 +173,10 @@ class PaymentServiceTest {
     @Test
     void handleCallbackUpdatesPaymentToFailureAndReturnsFailureRedirect() {
         Payment payment = Payment.builder()
-                .id(8L).token("tk").status(PaymentStatus.INITIALIZED).build();
+                .id(8L).token("tk").status(PaymentStatus.INITIALIZED)
+                .conversationId("conv-8")
+                .price(BigDecimal.TEN).paidPrice(BigDecimal.TEN).currency("TRY")
+                .build();
         when(paymentRepository.findByToken("tk")).thenReturn(Optional.of(payment));
 
         CheckoutForm form = new CheckoutForm();
@@ -176,6 +191,7 @@ class PaymentServiceTest {
         }
 
         verify(paymentRepository).save(payment);
+        verifyNoInteractions(paymentEventPublisher);
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILURE);
         assertThat(payment.getErrorMessage()).isEqualTo("declined");
         assertThat(redirect).isEqualTo("http://localhost:3000/payment/result?status=failure&paymentId=8");
@@ -196,12 +212,15 @@ class PaymentServiceTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Payment not found");
         }
+        verifyNoInteractions(paymentEventPublisher);
     }
 
     @Test
     void getPaymentStatusReturnsMappedResponse() {
         Payment payment = Payment.builder()
-                .id(1L).status(PaymentStatus.SUCCESS).buyerEmail("a@a").build();
+                .id(1L).conversationId("c1").status(PaymentStatus.SUCCESS).buyerEmail("a@a")
+                .price(BigDecimal.ONE).paidPrice(BigDecimal.ONE).currency("TRY")
+                .build();
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
 
         PaymentStatusResponse response = service.getPaymentStatus(1L);
@@ -222,19 +241,30 @@ class PaymentServiceTest {
 
     @Test
     void getPaymentStatusByTokenReturnsMappedResponse() {
-        Payment payment = Payment.builder().id(2L).token("tk").status(PaymentStatus.INITIALIZED).build();
+        Payment payment = Payment.builder()
+                .id(2L)
+                .token("tk")
+                .conversationId("c2")
+                .status(INITIALIZED)
+                .price(BigDecimal.ONE)
+                .paidPrice(BigDecimal.ONE)
+                .currency("TRY")
+                .build();
         when(paymentRepository.findByToken("tk")).thenReturn(Optional.of(payment));
 
         PaymentStatusResponse response = service.getPaymentStatusByToken("tk");
 
         assertThat(response.getId()).isEqualTo(2L);
-        assertThat(response.getStatus()).isEqualTo(PaymentStatus.INITIALIZED);
+        PaymentStatus status = response.getStatus();
+        assertThat(status).isEqualTo(INITIALIZED);
     }
 
     @Test
     void getPaymentsByEmailReturnsMappedList() {
-        Payment a = Payment.builder().id(1L).status(PaymentStatus.SUCCESS).buyerEmail("a@a").build();
-        Payment b = Payment.builder().id(2L).status(PaymentStatus.FAILURE).buyerEmail("a@a").build();
+        Payment a = Payment.builder().id(1L).conversationId("ca").status(PaymentStatus.SUCCESS).buyerEmail("a@a")
+                .price(BigDecimal.ONE).paidPrice(BigDecimal.ONE).currency("TRY").build();
+        Payment b = Payment.builder().id(2L).conversationId("cb").status(PaymentStatus.FAILURE).buyerEmail("a@a")
+                .price(BigDecimal.ONE).paidPrice(BigDecimal.ONE).currency("TRY").build();
         when(paymentRepository.findByBuyerEmailOrderByCreatedAtDesc("a@a")).thenReturn(List.of(a, b));
 
         List<PaymentStatusResponse> responses = service.getPaymentsByEmail("a@a");
@@ -246,7 +276,8 @@ class PaymentServiceTest {
 
     @Test
     void getAllPaymentsReturnsMappedList() {
-        Payment a = Payment.builder().id(10L).status(PaymentStatus.SUCCESS).build();
+        Payment a = Payment.builder().id(10L).conversationId("c10").status(PaymentStatus.SUCCESS)
+                .price(BigDecimal.ONE).paidPrice(BigDecimal.ONE).currency("TRY").build();
         when(paymentRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(a));
 
         List<PaymentStatusResponse> responses = service.getAllPayments();

@@ -11,6 +11,11 @@ ZarCommerce is a microservices-based e-commerce platform with a customer-facing 
 - English: `README.md`
 - Turkish: `README_tr.md`
 
+## Live demos
+
+- Storefront: [zarcommerce-five.vercel.app/tr](https://zarcommerce-five.vercel.app/tr)
+- Admin panel: [zarcommerce-admin.vercel.app](https://zarcommerce-admin.vercel.app/)
+
 ## Overview
 
 The project is split into two top-level areas:

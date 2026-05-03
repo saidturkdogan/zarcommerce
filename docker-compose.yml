@@ -136,6 +136,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_RABBITMQ_HOST=rabbitmq
       - IYZICO_API_KEY=sandbox-bl7bWinGcOgYfqtZAiWqRZSEAnnTU9PP
       - IYZICO_SECRET_KEY=sandbox-NLzgxX4rT2LJD88Hx0wXfSKzWM2dgWUF
       - IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
