@@ -1,6 +1,7 @@
 package com.zarcommerce.service_product.controller;
 
 import com.zarcommerce.service_product.dto.CreateProductRequest;
+import com.zarcommerce.service_product.dto.ProductPageResponse;
 import com.zarcommerce.service_product.dto.ProductResponse;
 import com.zarcommerce.service_product.dto.UpdateProductRequest;
 import com.zarcommerce.service_product.service.ProductService;
@@ -55,6 +56,28 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[1].name").value("B"));
+    }
+
+    @Test
+    void getProductsPageReturnsPaginatedPayload() throws Exception {
+        ProductResponse a = new ProductResponse(1L, "A", "a", null, null, 5.0,
+                "Cat", 1L, null, null, "active", "standard", "TRY", true);
+        ProductPageResponse page = new ProductPageResponse(List.of(a), 0, 12, 40, 4, true, false);
+        when(productService.getProductsPage(any(), eq("phone"), eq("Elektronik"))).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/products/page")
+                        .param("page", "0")
+                        .param("size", "12")
+                        .param("sortBy", "id")
+                        .param("direction", "desc")
+                        .param("search", "phone")
+                        .param("category", "Elektronik"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.totalElements").value(40))
+                .andExpect(jsonPath("$.totalPages").value(4))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(false));
     }
 
     @Test

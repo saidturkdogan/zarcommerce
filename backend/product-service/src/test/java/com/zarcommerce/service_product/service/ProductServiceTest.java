@@ -18,9 +18,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +69,46 @@ class ProductServiceTest {
     @BeforeEach
     void resetCommonStubs() {
         // No-op; lenient stubbing is configured per test
+    }
+
+    @Test
+    void getProductsPageReturnsMappedPageMetadata() {
+        Product p = existingProduct();
+        p.setId(77L);
+        p.setName("Paged Product");
+        p.setSlug("paged-product");
+        p.setBasePrice(BigDecimal.valueOf(99));
+        when(productRepository.findAll(PageRequest.of(0, 12)))
+                .thenReturn(new PageImpl<>(List.of(p), PageRequest.of(0, 12), 25));
+        when(productImageRepository.findFirstByProduct_IdAndPrimaryTrueOrderBySortOrderAscIdAsc(77L))
+                .thenReturn(Optional.empty());
+
+        var page = service.getProductsPage(PageRequest.of(0, 12), null, null);
+
+        assertThat(page.content()).hasSize(1);
+        assertThat(page.content().get(0).id()).isEqualTo(77L);
+        assertThat(page.page()).isEqualTo(0);
+        assertThat(page.size()).isEqualTo(12);
+        assertThat(page.totalElements()).isEqualTo(25L);
+        assertThat(page.totalPages()).isEqualTo(3);
+        assertThat(page.first()).isTrue();
+        assertThat(page.last()).isFalse();
+    }
+
+    @Test
+    void getProductsPageUsesSearchAndCategoryFiltersWhenProvided() {
+        Product p = existingProduct();
+        when(productRepository.findByNameContainingIgnoreCaseAndCategory_NameIgnoreCase(
+                "Phone", "Elektronik", PageRequest.of(1, 8)
+        )).thenReturn(new PageImpl<>(List.of(p), PageRequest.of(1, 8), 9));
+        when(productImageRepository.findFirstByProduct_IdAndPrimaryTrueOrderBySortOrderAscIdAsc(1L))
+                .thenReturn(Optional.empty());
+
+        var page = service.getProductsPage(PageRequest.of(1, 8), " Phone ", " Elektronik ");
+
+        assertThat(page.page()).isEqualTo(1);
+        assertThat(page.size()).isEqualTo(8);
+        assertThat(page.totalElements()).isEqualTo(9);
     }
 
     @Test

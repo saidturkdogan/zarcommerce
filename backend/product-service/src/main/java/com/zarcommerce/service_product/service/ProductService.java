@@ -1,6 +1,7 @@
 package com.zarcommerce.service_product.service;
 
 import com.zarcommerce.service_product.dto.CreateProductRequest;
+import com.zarcommerce.service_product.dto.ProductPageResponse;
 import com.zarcommerce.service_product.dto.ProductResponse;
 import com.zarcommerce.service_product.dto.UpdateProductRequest;
 import com.zarcommerce.service_product.entity.Brand;
@@ -12,6 +13,8 @@ import com.zarcommerce.service_product.repository.CategoryRepository;
 import com.zarcommerce.service_product.repository.ProductImageRepository;
 import com.zarcommerce.service_product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -45,6 +48,39 @@ public class ProductService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public ProductPageResponse getProductsPage(Pageable pageable, String search, String category) {
+        String normalizedSearch = search != null ? search.trim() : "";
+        String normalizedCategory = category != null ? category.trim() : "";
+
+        Page<Product> page;
+        if (!normalizedSearch.isEmpty() && !normalizedCategory.isEmpty()) {
+            page = productRepository.findByNameContainingIgnoreCaseAndCategory_NameIgnoreCase(
+                    normalizedSearch,
+                    normalizedCategory,
+                    pageable
+            );
+        } else if (!normalizedSearch.isEmpty()) {
+            page = productRepository.findByNameContainingIgnoreCase(normalizedSearch, pageable);
+        } else if (!normalizedCategory.isEmpty()) {
+            page = productRepository.findByCategory_NameIgnoreCase(normalizedCategory, pageable);
+        } else {
+            page = productRepository.findAll(pageable);
+        }
+
+        List<ProductResponse> content = page.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+        return new ProductPageResponse(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isFirst(),
+                page.isLast()
+        );
     }
 
     public ProductResponse getProductById(Long id) {

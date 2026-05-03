@@ -14,6 +14,16 @@ type Product = {
   imageUrl: string | null;
 };
 
+type ProductPageResponse = {
+  content: Product[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+};
+
 type ProductGridProps = {
   accessToken: string | null;
   onRequireLogin: () => void;
@@ -30,19 +40,51 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [addedIds, setAddedIds] = useState<number[]>([]); // animation state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
+  const [serverTotalElements, setServerTotalElements] = useState(0);
   const cart = useCart();
 
   useEffect(() => {
     const loadProducts = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`${PRODUCT_API_BASE}/api/v1/products`);
+        if (showFavoritesOnly) {
+          const response = await fetch(`${PRODUCT_API_BASE}/api/v1/products`);
+          if (!response.ok) {
+            throw new Error(`Ürünler alınamadı (${response.status})`);
+          }
+          const data = (await response.json()) as Product[];
+          setProducts(data);
+          setServerTotalElements(data.length);
+          setServerTotalPages(Math.max(1, Math.ceil(data.length / itemsPerPage)));
+          return;
+        }
 
+        const params = new URLSearchParams({
+          page: String(currentPage - 1),
+          size: String(itemsPerPage),
+          sortBy: "id",
+          direction: "desc",
+        });
+        if (searchQuery?.trim()) {
+          params.set("search", searchQuery.trim());
+        }
+        if (selectedCategory?.trim()) {
+          params.set("category", selectedCategory.trim());
+        }
+
+        const response = await fetch(`${PRODUCT_API_BASE}/api/v1/products/page?${params.toString()}`);
         if (!response.ok) {
           throw new Error(`Ürünler alınamadı (${response.status})`);
         }
 
-        const data = (await response.json()) as Product[];
-        setProducts(data);
+        const data = (await response.json()) as ProductPageResponse;
+        setProducts(data.content);
+        setServerTotalElements(data.totalElements);
+        setServerTotalPages(Math.max(1, data.totalPages || 1));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bilinmeyen hata");
       } finally {
@@ -51,7 +93,7 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
     };
 
     loadProducts();
-  }, []);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategory, showFavoritesOnly]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -125,6 +167,19 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
     return matchesSearch && matchesCategory && matchesFavorite;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, showFavoritesOnly, itemsPerPage]);
+
+  const totalPages = showFavoritesOnly
+    ? Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+    : serverTotalPages;
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * itemsPerPage;
+  const pageItems = showFavoritesOnly
+    ? filtered.slice(startIndex, startIndex + itemsPerPage)
+    : filtered;
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
@@ -167,7 +222,7 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-      {filtered.map((product) => {
+      {pageItems.map((product) => {
         const isAdded = addedIds.includes(product.id);
         return (
         <div key={product.id} className="group flex flex-col bg-white rounded-[32px] border border-gray-100/80 overflow-hidden hover:shadow-[0_20px_40px_-15px_rgba(64,29,143,0.1)] hover:-translate-y-1 transition-all duration-300">
@@ -252,6 +307,46 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
         );
       })}
       </div>
+      {filtered.length > 0 && (
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-100 bg-white p-4">
+          <div className="text-sm text-gray-500">
+            Toplam <span className="font-semibold text-brand-dark">{showFavoritesOnly ? filtered.length : serverTotalElements}</span> ürün, sayfa{" "}
+            <span className="font-semibold text-brand-dark">{safePage}</span> /{" "}
+            <span className="font-semibold text-brand-dark">{totalPages}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm text-gray-500">
+              Sayfa boyutu:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="ml-2 rounded-lg border border-gray-200 px-2 py-1 text-sm text-brand-dark"
+              >
+                <option value={8}>8</option>
+                <option value={12}>12</option>
+                <option value={16}>16</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Onceki
+            </button>
+            <span className="min-w-16 text-center text-sm font-semibold text-brand-dark">{safePage}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sonraki
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
