@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -159,7 +160,13 @@ public class PaymentService {
                 ? dto.getRegistrationAddress() : dto.getCity() + ", " + dto.getCountry());
         buyer.setCity(dto.getCity());
         buyer.setCountry(dto.getCountry());
-        if (dto.getPhoneNumber() != null) buyer.setGsmNumber(dto.getPhoneNumber());
+        String gsm = dto.getPhoneNumber();
+        if (!StringUtils.hasText(gsm)) {
+            gsm = "+905555555555";
+        } else {
+            gsm = gsm.trim();
+        }
+        buyer.setGsmNumber(gsm);
         if (dto.getZipCode() != null) buyer.setZipCode(dto.getZipCode());
         return buyer;
     }

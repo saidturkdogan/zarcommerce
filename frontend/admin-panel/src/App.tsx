@@ -55,7 +55,7 @@ type Customer = { id: number; firstName: string; lastName: string; email: string
 
 const USER_API = import.meta.env.VITE_USER_API_BASE_URL || 'http://localhost:8081'
 const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_BASE_URL || 'http://localhost:8082'
-const ORDER_API = 'http://localhost:8084'
+const ORDER_API = import.meta.env.VITE_ORDER_API_BASE_URL || 'http://localhost:8084'
 const TK = 'zarcommerce_admin_token'
 const UK = 'zarcommerce_admin_user'
 

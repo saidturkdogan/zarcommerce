@@ -56,7 +56,8 @@ class PaymentServiceTest {
     private PaymentRequest validRequest() {
         PaymentRequest.BuyerDto buyer = PaymentRequest.BuyerDto.builder()
                 .id("BY-1").name("Ada").surname("Lovelace").email("ada@example.com")
-                .identityNumber("11111111111").city("Istanbul").country("Turkey")
+                .identityNumber("11111111111").phoneNumber("+905551234567")
+                .city("Istanbul").country("Turkey")
                 .registrationAddress("Reg addr").build();
         PaymentRequest.AddressDto addr = PaymentRequest.AddressDto.builder()
                 .contactName("Ada").city("Istanbul").country("Turkey").address("Some addr").build();

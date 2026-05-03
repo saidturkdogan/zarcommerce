@@ -43,6 +43,7 @@ class PaymentControllerTest {
             "\"buyer\":{" +
             "\"id\":\"BY-1\",\"name\":\"Ada\",\"surname\":\"Lovelace\"," +
             "\"email\":\"ada@example.com\",\"identityNumber\":\"11111111111\"," +
+            "\"phoneNumber\":\"+905551234567\"," +
             "\"city\":\"Istanbul\",\"country\":\"Turkey\"}," +
             "\"shippingAddress\":{\"contactName\":\"Ada\",\"city\":\"Istanbul\"," +
             "\"country\":\"Turkey\",\"address\":\"Some addr\"}," +

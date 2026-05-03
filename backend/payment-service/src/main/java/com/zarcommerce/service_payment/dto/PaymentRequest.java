@@ -57,6 +57,8 @@ public class PaymentRequest {
         @NotBlank private String surname;
         @NotBlank @Email private String email;
         @NotBlank private String identityNumber;
+        /** Required by iyzico (Buyer.gsmNumber). */
+        @NotBlank(message = "GSM number is required")
         private String phoneNumber;
         private String registrationAddress;
         @NotBlank private String city;
