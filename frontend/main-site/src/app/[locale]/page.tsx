@@ -57,15 +57,30 @@ export default function Home() {
   const [formValues, setFormValues] = useState({ name: "", email: "", password: "" });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cart = useCart();
   const productsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? sessionStorage.getItem(SESSION_JWT_KEY) : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem(SESSION_JWT_KEY) : null;
     if (!token) return;
+
+    const storedUserStr = localStorage.getItem("zc_session_user");
+    if (storedUserStr) {
+      try {
+        const profile = JSON.parse(storedUserStr);
+        setAccessToken(token);
+        setSessionUser({
+          userId: profile.userId,
+          email: profile.email,
+          displayName: displayNameFromProfile(profile),
+        });
+        return;
+      } catch {
+        /* ignore */
+      }
+    }
 
     (async () => {
       try {
@@ -73,7 +88,8 @@ export default function Home() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          sessionStorage.removeItem(SESSION_JWT_KEY);
+          localStorage.removeItem(SESSION_JWT_KEY);
+          localStorage.removeItem("zc_session_user");
           return;
         }
         const profile = (await res.json()) as CustomerProfileResponse;
@@ -83,9 +99,10 @@ export default function Home() {
           email: profile.email,
           displayName: displayNameFromProfile(profile),
         });
-        sessionStorage.setItem("zc_session_user", JSON.stringify(profile));
+        localStorage.setItem("zc_session_user", JSON.stringify(profile));
       } catch {
-        sessionStorage.removeItem(SESSION_JWT_KEY);
+        localStorage.removeItem(SESSION_JWT_KEY);
+        localStorage.removeItem("zc_session_user");
       }
     })();
   }, []);
@@ -98,14 +115,14 @@ export default function Home() {
   }, []);
 
   const applyAuthSuccess = (data: CustomerAuthResponse) => {
-    sessionStorage.setItem(SESSION_JWT_KEY, data.token);
+    localStorage.setItem(SESSION_JWT_KEY, data.token);
     setAccessToken(data.token);
     setSessionUser({
       userId: data.userId,
       email: data.email,
       displayName: displayNameFromProfile(data),
     });
-    sessionStorage.setItem("zc_session_user", JSON.stringify({
+    localStorage.setItem("zc_session_user", JSON.stringify({
       userId: data.userId,
       email: data.email,
       firstName: data.firstName,
@@ -163,14 +180,15 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_JWT_KEY);
-    sessionStorage.removeItem("zc_session_user");
+    localStorage.removeItem(SESSION_JWT_KEY);
+    localStorage.removeItem("zc_session_user");
     setAccessToken(null);
     setSessionUser(null);
   };
 
   const handleSessionExpired = useCallback(() => {
-    sessionStorage.removeItem(SESSION_JWT_KEY);
+    localStorage.removeItem(SESSION_JWT_KEY);
+    localStorage.removeItem("zc_session_user");
     setAccessToken(null);
     setSessionUser(null);
     openAuthModal("login");
@@ -183,14 +201,6 @@ export default function Home() {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     setActiveSearch(searchQuery);
-    setSelectedCategory(null);
-    scrollToProducts();
-  };
-
-  const handleCategoryClick = (cat: string) => {
-    setSelectedCategory((prev) => (prev === cat ? null : cat));
-    setActiveSearch("");
-    setSearchQuery("");
     scrollToProducts();
   };
 
@@ -205,40 +215,35 @@ export default function Home() {
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl shadow-sm transition-all">
-        <div className="container mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 lg:px-8 h-20 grid grid-cols-[auto_1fr] lg:grid-cols-[1fr_auto_1fr] items-center gap-4 lg:gap-8">
+          <div className="flex items-center gap-4 min-w-0">
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 text-brand-dark hover:bg-gray-100 rounded-full transition-colors">
               <Menu size={24} />
             </button>
-            <Link href="/" className="relative block h-10 w-48 group">
-              <span className="text-2xl font-extrabold text-brand-dark tracking-tight flex items-center gap-1">
-                Zar<span className="text-brand-purple">Commerce</span>
-                <span className="w-2 h-2 rounded-full bg-brand-yellow animate-pulse"></span>
-              </span>
+            <Link href="/" className="relative flex items-center h-12 md:h-16 group">
+              <img src="/logo.png" alt="ZarCommerce" className="h-10 md:h-14 w-auto object-contain" />
             </Link>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-8 font-medium">
+          <nav className="hidden lg:flex items-center justify-center gap-10 font-medium min-w-max">
             <button onClick={scrollToProducts} className="text-brand-dark/80 hover:text-brand-purple transition-all hover:-translate-y-0.5">{t("campaigns")}</button>
-            <button onClick={scrollToProducts} className="text-brand-dark/80 hover:text-brand-purple transition-all hover:-translate-y-0.5">{t("categories")}</button>
+            <Link href="/categories" className="text-brand-dark/80 hover:text-brand-purple transition-colors font-medium">{t("categories")}</Link>
             <button onClick={scrollToProducts} className="text-brand-dark/80 hover:text-brand-purple transition-all hover:-translate-y-0.5">{t("foryou")}</button>
           </nav>
 
-          <div className="flex items-center gap-3 lg:gap-6">
-            <div className="hidden sm:flex items-center p-1 bg-gray-100/80 rounded-full border border-gray-200/60 shadow-inner">
-              <Link href="/" locale="tr" className={`px-4 py-1 text-xs font-bold rounded-full transition-all duration-300 ${locale === 'tr' ? 'bg-white text-brand-purple shadow-sm scale-100' : 'text-gray-400 hover:text-brand-dark scale-95'}`}>TR</Link>
-              <Link href="/" locale="en" className={`px-4 py-1 text-xs font-bold rounded-full transition-all duration-300 ${locale === 'en' ? 'bg-white text-brand-purple shadow-sm scale-100' : 'text-gray-400 hover:text-brand-dark scale-95'}`}>EN</Link>
-            </div>
-
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 lg:gap-3 justify-end min-w-0">
+            <div className="flex items-center gap-1.5 lg:gap-2">
               {sessionUser ? (
                 <>
-                  <span className="hidden md:inline-flex items-center h-10 px-4 rounded-full bg-brand-purple/10 text-brand-purple font-semibold text-sm">
+                  <span className="hidden 2xl:inline-flex items-center h-9 px-3 rounded-full bg-brand-purple/10 text-brand-purple font-semibold text-sm whitespace-nowrap">
                     {sessionUser.displayName}
                   </span>
+                  <Link href="/orders" className="h-9 px-3 lg:px-4 flex items-center justify-center text-sm font-semibold text-brand-dark rounded-full hover:bg-gray-100 transition-colors whitespace-nowrap">
+                    Siparişlerim
+                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="h-10 px-4 text-sm font-semibold text-brand-dark rounded-full hover:bg-gray-100 transition-colors"
+                    className="h-9 px-3 lg:px-4 text-sm font-semibold text-brand-dark rounded-full hover:bg-gray-100 transition-colors whitespace-nowrap"
                   >
                     Çıkış
                   </button>
@@ -247,51 +252,71 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => openAuthModal("login")}
-                    className="h-10 px-4 text-sm font-semibold text-brand-dark rounded-full hover:bg-gray-100 transition-colors"
+                    className="h-9 px-3 lg:px-4 text-sm font-semibold text-brand-dark rounded-full hover:bg-gray-100 transition-colors whitespace-nowrap"
                   >
                     {t("login")}
                   </button>
                   <button
                     onClick={() => openAuthModal("register")}
-                    className="h-10 px-4 text-sm font-semibold text-white bg-brand-purple rounded-full hover:bg-brand-purple-dark transition-colors"
+                    className="h-9 px-3 lg:px-4 text-sm font-semibold text-white bg-brand-purple rounded-full hover:bg-brand-purple-dark transition-colors whitespace-nowrap"
                   >
                     {t("register")}
                   </button>
                 </>
               )}
-              <button onClick={() => { if (!accessToken) { openAuthModal("login"); } else { scrollToProducts(); }}} className="p-2.5 text-brand-dark hover:bg-red-500/10 hover:text-red-500 rounded-full transition-all relative">
-                <Heart size={20} />
+            </div>
+
+            <div className="h-6 w-px bg-gray-200 hidden xl:block" />
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  if (!accessToken) {
+                    openAuthModal("login");
+                    return;
+                  }
+                  router.push("/favorites");
+                }}
+                className="p-2 text-brand-dark hover:bg-red-500/10 hover:text-red-500 rounded-full transition-all relative"
+                title="Begenilerim"
+              >
+                <Heart size={19} />
               </button>
-              <button onClick={() => setCartOpen(true)} className="p-2.5 text-brand-dark hover:bg-brand-purple/10 hover:text-brand-purple rounded-full transition-all relative">
-                <ShoppingBag size={20} />
+              <button onClick={() => setCartOpen(true)} className="p-2 text-brand-dark hover:bg-brand-purple/10 hover:text-brand-purple rounded-full transition-all relative">
+                <ShoppingBag size={19} />
                 {cart.totalCount > 0 && <span className="absolute top-0 right-0 bg-brand-yellow text-brand-dark text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{cart.totalCount}</span>}
               </button>
+            </div>
+
+            <div className="hidden lg:flex items-center p-1 bg-gray-100/80 rounded-full border border-gray-200/60 shadow-inner">
+              <Link href="/" locale="tr" className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-300 ${locale === 'tr' ? 'bg-white text-brand-purple shadow-sm scale-100' : 'text-gray-400 hover:text-brand-dark scale-95'}`}>TR</Link>
+              <Link href="/" locale="en" className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-300 ${locale === 'en' ? 'bg-white text-brand-purple shadow-sm scale-100' : 'text-gray-400 hover:text-brand-dark scale-95'}`}>EN</Link>
             </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
-        <section className="relative overflow-hidden bg-white pt-16 pb-24 lg:pt-24 lg:pb-32 px-4 lg:px-8">
+        <section className="relative overflow-hidden bg-white pt-10 pb-16 lg:pt-16 lg:pb-20 px-4 lg:px-8">
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
             <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-brand-purple/10 to-transparent blur-3xl"></div>
             <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-brand-yellow/10 to-transparent blur-3xl"></div>
           </div>
 
           <div className="container mx-auto relative z-10 flex flex-col items-center text-center max-w-5xl">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-brand-purple/15 mb-8 transform hover:scale-105 transition-transform cursor-pointer">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-brand-purple/15 mb-6 transform hover:scale-105 transition-transform cursor-pointer">
               <span className="flex h-2.5 w-2.5 rounded-full bg-brand-purple animate-pulse"></span>
               <span className="text-sm font-semibold text-brand-purple tracking-wide">{t("slogan")}</span>
               <ArrowRight size={14} className="text-brand-purple ml-1" />
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-brand-dark mb-6 tracking-tight leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-brand-dark mb-4 tracking-tight leading-tight">
               {t.rich("title", {
                 span: (chunks) => <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple via-brand-purple-light to-indigo-500 drop-shadow-sm">{chunks}</span>
               })}
             </h1>
 
-            <p className="text-lg md:text-xl text-brand-dark/60 mb-12 max-w-2xl font-medium leading-relaxed">
+            <p className="text-base md:text-lg text-brand-dark/60 mb-8 max-w-2xl font-medium leading-relaxed">
               {t("subtitle")}
             </p>
 
@@ -304,7 +329,7 @@ export default function Home() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("searchPlaceholder")}
-                  className="w-full h-16 sm:h-20 pl-16 pr-36 sm:pr-48 rounded-full border border-gray-200 bg-white/90 backdrop-blur-md shadow-xl focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 focus:outline-none transition-all text-brand-dark text-lg placeholder:text-gray-400"
+                  className="w-full h-14 sm:h-16 pl-14 pr-32 sm:pr-40 rounded-full border border-gray-200 bg-white/90 backdrop-blur-md shadow-xl focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 focus:outline-none transition-all text-brand-dark text-base sm:text-lg placeholder:text-gray-400"
                 />
                 <button type="submit" className="absolute right-2 top-2 bottom-2 bg-brand-dark hover:bg-brand-purple text-white font-semibold px-6 sm:px-10 rounded-full transition-colors text-base sm:text-lg flex items-center gap-2 shadow-md">
                   <Search size={20} className="hidden sm:block" />
@@ -313,15 +338,11 @@ export default function Home() {
               </div>
             </form>
 
-            <div className="mt-16 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
+            <div className="mt-10 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
               {["Elektronik", "Moda", "Ev & Yaşam", "Kozmetik", "Spor"].map((category) => (
-                <button key={category} onClick={() => handleCategoryClick(category)} className={`px-5 py-2.5 backdrop-blur-sm border rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 ${
-                  selectedCategory === category
-                    ? "bg-brand-purple text-white border-brand-purple shadow-lg"
-                    : "bg-white/60 border-gray-200 text-brand-dark/70 hover:text-brand-purple hover:border-brand-purple/30 hover:bg-white hover:shadow-md"
-                }`}>
+                <Link key={category} href={`/categories?category=${encodeURIComponent(category)}`} className="px-5 py-2.5 backdrop-blur-sm border rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 bg-white/60 border-gray-200 text-brand-dark/70 hover:text-brand-purple hover:border-brand-purple/30 hover:bg-white hover:shadow-md">
                   {category}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -361,11 +382,11 @@ export default function Home() {
               <div>
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-dark tracking-tight">{t("dealsOfDay")}</h2>
                 <p className="text-gray-500 mt-2 font-medium">
-                  {activeSearch ? `"${activeSearch}" için sonuçlar` : selectedCategory ? `${selectedCategory} kategorisi` : "Seçili ürünlerde sınırlı süreli teklifleri keşfet"}
+                  {activeSearch ? `"${activeSearch}" için sonuçlar` : "Secili urunlerde sinirli sureli teklifleri kesfet"}
                 </p>
               </div>
-              {(activeSearch || selectedCategory) && (
-                <button onClick={() => { setActiveSearch(""); setSearchQuery(""); setSelectedCategory(null); }} className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-full text-brand-dark font-semibold hover:border-brand-purple hover:text-brand-purple transition-all hover:shadow-sm">
+              {activeSearch && (
+                <button onClick={() => { setActiveSearch(""); setSearchQuery(""); }} className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-full text-brand-dark font-semibold hover:border-brand-purple hover:text-brand-purple transition-all hover:shadow-sm">
                   Filtreleri Temizle
                 </button>
               )}
@@ -376,7 +397,6 @@ export default function Home() {
               onRequireLogin={() => openAuthModal("login")}
               onSessionExpired={handleSessionExpired}
               searchQuery={activeSearch}
-              selectedCategory={selectedCategory}
             />
           </div>
         </section>
@@ -386,9 +406,9 @@ export default function Home() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-1 md:col-span-2">
-              <span className="text-2xl font-extrabold tracking-tight flex items-center gap-1 mb-6">
-                Zar<span className="text-brand-yellow">Commerce</span>
-              </span>
+              <div className="mb-6 inline-flex items-center justify-center rounded-xl bg-white/95 px-3 py-2">
+                <img src="/logo.png" alt="ZarCommerce" className="h-14 md:h-16 w-auto object-contain" />
+              </div>
               <p className="text-gray-400 max-w-sm mb-6 leading-relaxed">
                 Modern alışverişin yeni adresi. Aradığınız her şey, en uygun fiyatlar ve güvenilir teslimat ile kapınızda.
               </p>

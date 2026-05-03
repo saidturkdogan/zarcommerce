@@ -2,10 +2,10 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
-import { Link } from '../../../../../i18n/routing';
+import { Link } from '../../../../i18n/routing';
 import { CheckCircle2, XCircle, Loader2, ShoppingBag, ArrowLeft, Package, CreditCard, Clock } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8084';
+const API_BASE_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
 
 interface PaymentDetail {
   id: number;
@@ -49,8 +49,8 @@ function PaymentResultContent() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="container mx-auto px-4 lg:px-8 h-16 flex items-center">
-          <Link href="/" className="text-xl font-extrabold tracking-tight text-brand-dark">
-            Zar<span className="text-brand-purple">Commerce</span>
+          <Link href="/" className="inline-block">
+            <img src="/logo.png" alt="ZarCommerce" className="h-10 md:h-12 w-auto object-contain" />
           </Link>
         </div>
       </header>
@@ -138,8 +138,15 @@ function PaymentResultContent() {
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Link
-                    href="/"
+                    href="/orders"
                     className="flex-1 h-12 flex items-center justify-center gap-2 bg-brand-purple text-white font-semibold rounded-xl hover:bg-brand-purple-dark transition-colors"
+                  >
+                    <Package size={18} />
+                    Siparişlerim
+                  </Link>
+                  <Link
+                    href="/"
+                    className="flex-1 h-12 flex items-center justify-center gap-2 bg-gray-100 text-brand-dark font-semibold rounded-xl hover:bg-gray-200 transition-colors"
                   >
                     <ShoppingBag size={18} />
                     Alışverişe Devam Et

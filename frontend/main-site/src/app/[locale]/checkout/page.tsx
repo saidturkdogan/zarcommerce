@@ -6,7 +6,7 @@ import { ShoppingBag, CreditCard, Shield, Lock, ChevronRight, Package, Minus, Pl
 import { useCart } from '../../../lib/cart';
 import { SESSION_JWT_KEY, USER_API_BASE } from '../../../lib/api';
 
-const ORDER_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8084';
+const PAYMENT_API_BASE = process.env.NEXT_PUBLIC_PAYMENT_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
 
 type SessionUser = { userId: number; email: string; firstName: string; lastName: string };
 
@@ -25,10 +25,10 @@ export default function CheckoutPage() {
 
   // Check auth on mount
   useEffect(() => {
-    const token = sessionStorage.getItem(SESSION_JWT_KEY);
+    const token = localStorage.getItem(SESSION_JWT_KEY);
     if (!token) { setAuthChecked(true); return; }
 
-    const storedUserStr = sessionStorage.getItem("zc_session_user");
+    const storedUserStr = localStorage.getItem("zc_session_user");
     if (storedUserStr) {
       try {
         const storedUser = JSON.parse(storedUserStr);
@@ -53,8 +53,15 @@ export default function CheckoutPage() {
         if (res.ok) {
           const p = await res.json();
           setUser({ userId: p.userId, email: p.email, firstName: p.firstName, lastName: p.lastName });
+          localStorage.setItem("zc_session_user", JSON.stringify(p));
+        } else {
+          localStorage.removeItem(SESSION_JWT_KEY);
+          localStorage.removeItem("zc_session_user");
         }
-      } catch { /* ignore */ }
+      } catch { 
+        localStorage.removeItem(SESSION_JWT_KEY);
+        localStorage.removeItem("zc_session_user");
+      }
       setAuthChecked(true);
     })();
   }, []);
@@ -97,7 +104,7 @@ export default function CheckoutPage() {
         basketItems,
       };
 
-      const response = await fetch(`${ORDER_API_BASE}/api/v1/payments/checkout-form/initialize`, {
+      const response = await fetch(`${PAYMENT_API_BASE}/api/v1/payments/checkout-form/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -174,7 +181,7 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-brand-dark hover:text-brand-purple transition-colors">
             <ArrowLeft size={20} />
-            <span className="text-xl font-extrabold tracking-tight">Zar<span className="text-brand-purple">Commerce</span></span>
+            <img src="/logo.png" alt="ZarCommerce" className="h-10 md:h-12 w-auto object-contain" />
           </Link>
           <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${step === 'cart' ? 'bg-brand-purple text-white' : 'bg-brand-purple/10 text-brand-purple'}`}>

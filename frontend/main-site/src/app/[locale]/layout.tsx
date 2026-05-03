@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ZarCommerce | Alışverişte Şansını Yarat",
   description: "ZarCommerce",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default async function LocaleLayout({

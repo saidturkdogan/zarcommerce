@@ -51,7 +51,7 @@ services:
       - product-service
       - cart-service
       - order-service
-      - recommendation-service
+      - payment-service
 
   user-service:
     build:
@@ -116,11 +116,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_RABBITMQ_HOST=rabbitmq
-      # Iyzico Sandbox - replace with your actual sandbox keys
-      - IYZICO_API_KEY=sandbox-afXhSzHFiClOVTIYmNmzitmOz9GnTKPM
-      - IYZICO_SECRET_KEY=sandbox-KPGX0EC3rNbcBjFomusmA2hxeMrcnuZp
-      - IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
-      - IYZICO_CALLBACK_URL=http://localhost:8084/api/v1/payments/callback
+      - PAYMENT_SERVICE_BASE_URL=http://payment-service:8085
     networks:
       - zarcommerce_net
     depends_on:
@@ -129,15 +125,27 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  recommendation-service:
+  payment-service:
     build:
-      context: ./backend/recommendation-service
+      context: ./backend/payment-service
       dockerfile: Dockerfile
-    container_name: zarcommerce_recommendation_service
+    container_name: zarcommerce_payment_service
     ports:
       - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/zarcommerce
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - IYZICO_API_KEY=sandbox-bl7bWinGcOgYfqtZAiWqRZSEAnnTU9PP
+      - IYZICO_SECRET_KEY=sandbox-NLzgxX4rT2LJD88Hx0wXfSKzWM2dgWUF
+      - IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
+      - IYZICO_CALLBACK_URL=http://localhost:8085/api/v1/payments/callback
+      - IYZICO_FRONTEND_BASE_URL=http://localhost:3000
     networks:
       - zarcommerce_net
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   main-site:
     build:

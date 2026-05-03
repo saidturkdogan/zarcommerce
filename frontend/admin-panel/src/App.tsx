@@ -71,6 +71,31 @@ function hdrs() {
   return { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }
 }
 
+function AppModal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [auth, setAuth] = useState(() => !!localStorage.getItem(TK))
   const [uname, setUname] = useState('admin')
@@ -360,19 +385,6 @@ export default function App() {
     </div>
   )
 
-  const Modal = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30" onClick={() => { setEditing(null); setShowCreate(false); setDelTarget(null) }} />
-      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button onClick={() => { setEditing(null); setShowCreate(false); setDelTarget(null) }} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-
   const renderDashboard = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -603,7 +615,7 @@ export default function App() {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Product Edit Modal */}
       {editing && (
-        <Modal title="Ürünü düzenle">
+        <AppModal title="Ürünü düzenle" onClose={() => setEditing(null)}>
           <form onSubmit={handleSave} className="space-y-4">
             {productFormFields}
             {saveErr && <div className="p-2.5 bg-red-50 text-red-600 rounded-lg text-xs">{saveErr}</div>}
@@ -612,12 +624,12 @@ export default function App() {
               <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Güncelle'}</button>
             </div>
           </form>
-        </Modal>
+        </AppModal>
       )}
 
       {/* Create Product Modal */}
       {showCreate && (
-        <Modal title="Yeni ürün ekle">
+        <AppModal title="Yeni ürün ekle" onClose={() => setShowCreate(false)}>
           <form onSubmit={handleSave} className="space-y-4">
             {productFormFields}
             {saveErr && <div className="p-2.5 bg-red-50 text-red-600 rounded-lg text-xs">{saveErr}</div>}
@@ -626,12 +638,12 @@ export default function App() {
               <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Oluşturuluyor...' : 'Oluştur'}</button>
             </div>
           </form>
-        </Modal>
+        </AppModal>
       )}
 
       {/* Delete Confirm */}
       {delTarget && (
-        <Modal title="Delete Product">
+        <AppModal title="Delete Product" onClose={() => setDelTarget(null)}>
           <div className="text-center mb-6">
             <div className="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-3"><Trash2 className="w-5 h-5" /></div>
             <p className="text-sm text-gray-600">Are you sure you want to delete <span className="font-semibold text-gray-900">&ldquo;{delTarget.name}&rdquo;</span>?</p>
@@ -641,7 +653,7 @@ export default function App() {
             <button onClick={() => setDelTarget(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
             <button onClick={handleDelete} disabled={saving} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">{saving ? 'Deleting...' : 'Delete'}</button>
           </div>
-        </Modal>
+        </AppModal>
       )}
 
       {/* Sidebar */}

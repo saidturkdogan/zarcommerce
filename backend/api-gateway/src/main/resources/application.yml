@@ -46,13 +46,13 @@ spring:
         - id: order-service
           uri: http://order-service:8084
           predicates:
-            - Path=/api/v1/orders/**,/api/v1/payments/**
-            
-        - id: recommendation-service
-          uri: http://recommendation-service:8085
-          predicates:
-            - Path=/api/v1/recommendations/**
+            - Path=/api/v1/orders/**
 
+        - id: payment-service
+          uri: http://payment-service:8085
+          predicates:
+            - Path=/api/v1/payments/**
+            
 management:
   endpoints:
     web:

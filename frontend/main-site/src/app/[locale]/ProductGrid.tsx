@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ShoppingCart, Heart, ExternalLink, Star, Check } from "lucide-react";
 import { PRODUCT_API_BASE, USER_API_BASE } from "../../lib/api";
 import { useCart } from "../../lib/cart";
+import { Link } from "../../i18n/routing";
 
 type Product = {
   id: number;
@@ -19,12 +20,14 @@ type ProductGridProps = {
   onSessionExpired: () => void;
   searchQuery?: string;
   selectedCategory?: string | null;
+  showFavoritesOnly?: boolean;
 };
 
-export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpired, searchQuery, selectedCategory }: Readonly<ProductGridProps>) {
+export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpired, searchQuery, selectedCategory, showFavoritesOnly = false }: Readonly<ProductGridProps>) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [addedIds, setAddedIds] = useState<number[]>([]); // animation state
   const cart = useCart();
@@ -75,6 +78,7 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
   }, [accessToken, onSessionExpired]);
 
   const toggleFavorite = async (productId: number) => {
+    setFavoriteError(null);
     if (!accessToken) {
       onRequireLogin();
       return;
@@ -92,12 +96,15 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
         onSessionExpired();
         return;
       }
-      if (!res.ok) return;
+      if (!res.ok) {
+        setFavoriteError("Begeni guncellenemedi. Lutfen tekrar deneyin.");
+        return;
+      }
       setFavoriteIds((prev) =>
         isFavorite ? prev.filter((id) => id !== productId) : [...prev, productId]
       );
     } catch {
-      /* ignore */
+      setFavoriteError("Baglanti hatasi nedeniyle begeni guncellenemedi.");
     }
   };
 
@@ -114,7 +121,8 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
   const filtered = products.filter((p) => {
     const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || (p.category ?? "").toLowerCase() === selectedCategory.toLowerCase();
-    return matchesSearch && matchesCategory;
+    const matchesFavorite = !showFavoritesOnly || favoriteIds.includes(p.id);
+    return matchesSearch && matchesCategory && matchesFavorite;
   });
 
   if (loading) {
@@ -144,13 +152,21 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
   if (filtered.length === 0) {
     return (
       <div className="p-12 bg-white border border-gray-100 rounded-3xl text-center">
-        <p className="text-gray-400 text-lg font-medium">Aramanızla eşleşen ürün bulunamadı.</p>
+        <p className="text-gray-400 text-lg font-medium">
+          {showFavoritesOnly ? "Henuz begenilen urun yok." : "Aramanizla eslesen urun bulunamadi."}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+    <div>
+      {favoriteError && (
+        <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          {favoriteError}
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
       {filtered.map((product) => {
         const isAdded = addedIds.includes(product.id);
         return (
@@ -177,7 +193,7 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
               </span>
             </div>
 
-            <div className="absolute top-4 right-4 flex flex-col gap-2 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute top-4 right-4 flex flex-col gap-2 translate-x-0 opacity-100 sm:translate-x-12 sm:opacity-0 sm:group-hover:translate-x-0 sm:group-hover:opacity-100 transition-all duration-300">
               <button
                 type="button"
                 onClick={() => void toggleFavorite(product.id)}
@@ -189,9 +205,9 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
                   className={favoriteIds.includes(product.id) ? "text-red-500 fill-red-500" : ""}
                 />
               </button>
-              <button type="button" className="w-10 h-10 rounded-full bg-white text-gray-500 hover:text-brand-purple hover:bg-brand-purple/10 flex items-center justify-center shadow-sm border border-gray-100 transition-colors">
+              <Link href={`/products/${product.id}`} className="w-10 h-10 rounded-full bg-white text-gray-500 hover:text-brand-purple hover:bg-brand-purple/10 flex items-center justify-center shadow-sm border border-gray-100 transition-colors" title="Urun detayina git">
                 <ExternalLink size={18} />
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -205,9 +221,11 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
               <span className="text-xs text-gray-400 ml-1 font-medium">(4.0)</span>
             </div>
 
-            <h3 className="font-semibold text-brand-dark text-lg mb-2 line-clamp-2 group-hover:text-brand-purple transition-colors leading-tight">
-              {product.name}
-            </h3>
+              <h3 className="font-semibold text-brand-dark text-lg mb-2 line-clamp-2 group-hover:text-brand-purple transition-colors leading-tight">
+                <Link href={`/products/${product.id}`} className="hover:text-brand-purple transition-colors">
+                  {product.name}
+                </Link>
+              </h3>
 
             <div className="mt-auto pt-6 flex items-center justify-between">
               <div className="flex flex-col">
@@ -233,6 +251,7 @@ export default function ProductGrid({ accessToken, onRequireLogin, onSessionExpi
         </div>
         );
       })}
+      </div>
     </div>
   );
 }
