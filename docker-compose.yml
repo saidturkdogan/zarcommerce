@@ -27,8 +27,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
-      # Küçük VPS / düşük RAM: broker bellek tavanı (varsayılan ~%40 RAM)
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.4"
     networks:
       - zarcommerce_net
     healthcheck:
