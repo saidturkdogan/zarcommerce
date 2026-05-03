@@ -6,53 +6,46 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-      routes:
-        - id: user-auth-service
-          uri: http://user-service:8081
-          predicates:
-            - Path=/api/v1/auth/**
+      # spring-cloud-starter-gateway-server-webmvc (Boot 4+) — route'lar burada tanımlanır.
+      # Eski `spring.cloud.gateway.routes` (reactive) bu modda yüklenmez; 404 üretirdi.
+      server:
+        webmvc:
+          routes:
+            - id: user-auth-service
+              uri: http://user-service:8081
+              predicates:
+                - Path=/api/v1/auth/**
 
-        - id: user-wishlist-service
-          uri: http://user-service:8081
-          predicates:
-            - Path=/api/v1/wishlist,/api/v1/wishlist/**
+            - id: user-wishlist-service
+              uri: http://user-service:8081
+              predicates:
+                - Path=/api/v1/wishlist,/api/v1/wishlist/**
 
-        - id: user-service
-          uri: http://user-service:8081
-          predicates:
-            - Path=/api/v1/users/**
-        
-        - id: product-service
-          uri: http://product-service:8082
-          predicates:
-            - Path=/api/v1/products,/api/v1/products/**,/api/v1/categories,/api/v1/categories/**
-            
-        - id: cart-service
-          uri: http://cart-service:8083
-          predicates:
-            - Path=/api/v1/cart/**
-            
-        - id: order-service
-          uri: http://order-service:8084
-          predicates:
-            - Path=/api/v1/orders/**
+            - id: user-service
+              uri: http://user-service:8081
+              predicates:
+                - Path=/api/v1/users/**
 
-        - id: payment-service
-          uri: http://payment-service:8085
-          predicates:
-            - Path=/api/v1/payments/**
-            
+            - id: product-service
+              uri: http://product-service:8082
+              predicates:
+                - Path=/api/v1/products,/api/v1/products/**,/api/v1/categories,/api/v1/categories/**
+
+            - id: cart-service
+              uri: http://cart-service:8083
+              predicates:
+                - Path=/api/v1/cart/**
+
+            - id: order-service
+              uri: http://order-service:8084
+              predicates:
+                - Path=/api/v1/orders/**
+
+            - id: payment-service
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/api/v1/payments/**
+
 # Optional: one INFO line per proxied request (method, URI, status, duration)
 # zarcommerce:
 #   logging:
