@@ -13,4 +13,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+    show-sql: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
     show-sql: true

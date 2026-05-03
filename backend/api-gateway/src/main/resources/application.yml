@@ -53,6 +53,11 @@ spring:
           predicates:
             - Path=/api/v1/payments/**
             
+# Optional: one INFO line per proxied request (method, URI, status, duration)
+# zarcommerce:
+#   logging:
+#     http-requests: true
+
 management:
   endpoints:
     web:

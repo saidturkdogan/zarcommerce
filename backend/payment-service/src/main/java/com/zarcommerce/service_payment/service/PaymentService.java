@@ -76,6 +76,8 @@ public class PaymentService {
         } else {
             payment.setStatus(PaymentStatus.FAILURE);
             payment.setErrorMessage(checkoutForm.getErrorMessage());
+            log.warn("Iyzico checkout init failed conversationId={} status={} error={}",
+                    conversationId, checkoutForm.getStatus(), checkoutForm.getErrorMessage());
         }
 
         payment = paymentRepository.save(payment);
@@ -108,6 +110,9 @@ public class PaymentService {
         } else {
             payment.setStatus(PaymentStatus.FAILURE);
             payment.setErrorMessage(checkoutForm.getErrorMessage());
+            log.warn("Iyzico callback unsuccessful paymentId={} token={} status={} paymentStatus={} error={}",
+                    payment.getId(), token, checkoutForm.getStatus(), checkoutForm.getPaymentStatus(),
+                    checkoutForm.getErrorMessage());
         }
 
         paymentRepository.save(payment);

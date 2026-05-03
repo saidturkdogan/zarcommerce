@@ -1,0 +1,5 @@
+com\zarcommerce\logging\HttpRequestLoggingFilter.class
+com\zarcommerce\logging\CorrelationIdRequestWrapper.class
+com\zarcommerce\logging\CorrelationIdConstants.class
+com\zarcommerce\logging\CorrelationIdFilter.class
+com\zarcommerce\logging\autoconfigure\LoggingAutoConfiguration.class

@@ -12,6 +12,7 @@
 	<description>ZarCommerce E-Ticaret Uygulamasi</description>
 
 	<modules>
+		<module>logging-common</module>
 		<module>api-gateway</module>
 		<module>user-service</module>
 		<module>product-service</module>
