@@ -2,7 +2,7 @@
   "HomePage": {
     "title": "Alışverişte <span>Şansını</span> Kendin Yarat",
     "subtitle": "Yüz binlerce ürün, sana özel fırsatlar ve sürpriz indirimlerle dolu yeni nesil e-ticaret deneyimine hoş geldin.",
-    "slogan": "n11 ile alışverişin yeni yolu",
+    "slogan": "ZarCommerce ile alışverişin yeni yolu",
     "searchPlaceholder": "Ne aramıştınız? (Örn: iPhone 15)",
     "searchButton": "Ara",
     "campaigns": "Kampanyalar",
@@ -13,5 +13,14 @@
     "dealsOfDay": "Günün Fırsatları",
     "seeAll": "Tümünü Gör →",
     "discount": "%25 İndirim"
+  },
+  "Auth": {
+    "namePlaceholder": "Ad Soyad",
+    "emailPlaceholder": "E-posta",
+    "passwordPlaceholder": "Şifre",
+    "loginButton": "Giriş Yap",
+    "registerButton": "Hesap Oluştur",
+    "missingFieldsError": "Lütfen tüm gerekli alanları doldurun.",
+    "connectionError": "Bağlantı hatası. Sunucu çalışıyor mu?"
   }
 }

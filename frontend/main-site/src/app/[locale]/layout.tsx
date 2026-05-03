@@ -5,6 +5,7 @@ import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '../../i18n/routing';
+import {CartProvider} from '../../lib/cart';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,10 +41,13 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <CartProvider>
+            {children}
+          </CartProvider>
         </NextIntlClientProvider>
       </body>
     </html>

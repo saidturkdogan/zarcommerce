@@ -1,12 +1,55 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Settings,
-  LogOut, RefreshCw, Search, Lock, User, TrendingUp, Tag,
+  LogOut, RefreshCw, Search, TrendingUp, Tag,
   CircleDollarSign, Pencil, Trash2, Plus, X, CheckCircle2,
-  Clock, XCircle, Truck, ChevronDown
+  XCircle,
 } from 'lucide-react'
 
-type Product = { id: number; name: string; price: number; category: string }
+type Product = {
+  id: number
+  name: string
+  slug: string
+  imageUrl: string | null
+  description: string | null
+  price: number
+  category: string | null
+  categoryId: number | null
+  brand: string | null
+  brandId: number | null
+  status: string
+  taxClass: string
+  currency: string
+  active: boolean
+}
+
+type ProductFormState = {
+  name: string
+  slug: string
+  imageUrl: string
+  description: string
+  price: string
+  category: string
+  brand: string
+  status: string
+  taxClass: string
+  currency: string
+  active: boolean
+}
+
+const emptyProductForm = (): ProductFormState => ({
+  name: '',
+  slug: '',
+  imageUrl: '',
+  description: '',
+  price: '',
+  category: '',
+  brand: '',
+  status: 'active',
+  taxClass: 'standard',
+  currency: 'TRY',
+  active: true,
+})
 type Order = { id: number; orderNumber: string; customer: string; email: string; date: string; total: number; status: string; items: number }
 type Customer = { id: number; firstName: string; lastName: string; email: string; role: string }
 
@@ -54,7 +97,7 @@ export default function App() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [delTarget, setDelTarget] = useState<Product | null>(null)
-  const [form, setForm] = useState({ name: '', price: '', category: '' })
+  const [form, setForm] = useState<ProductFormState>(emptyProductForm)
   const [saving, setSaving] = useState(false)
   const [saveErr, setSaveErr] = useState<string | null>(null)
   const [ordFilter, setOrdFilter] = useState('all')
@@ -91,11 +134,17 @@ export default function App() {
   useEffect(() => { if (auth) { loadProducts(); loadOrders(); loadCustomers() } }, [auth])
 
   const totalVal = useMemo(() => products.reduce((a, p) => a + p.price, 0), [products])
-  const catCount = useMemo(() => new Set(products.map(p => p.category)).size, [products])
+  const catCount = useMemo(() => new Set(products.map(p => p.category).filter(Boolean) as string[]).size, [products])
   const avgPrice = useMemo(() => products.length ? totalVal / products.length : 0, [products, totalVal])
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase()
-    return !n ? products : products.filter(p => p.name.toLowerCase().includes(n) || p.category.toLowerCase().includes(n))
+    return !n ? products : products.filter(p =>
+      p.name.toLowerCase().includes(n) ||
+      (p.slug && p.slug.toLowerCase().includes(n)) ||
+      (p.category && p.category.toLowerCase().includes(n)) ||
+      (p.brand && p.brand.toLowerCase().includes(n)) ||
+      (p.description && p.description.toLowerCase().includes(n))
+    )
   }, [products, q])
 
   const filteredOrders = useMemo(() => {
@@ -138,21 +187,61 @@ export default function App() {
 
   const openEdit = (p: Product) => {
     setEditing(p)
-    setForm({ name: p.name, price: p.price.toString(), category: p.category })
+    setForm({
+      name: p.name,
+      slug: p.slug,
+      imageUrl: p.imageUrl ?? '',
+      description: p.description ?? '',
+      price: p.price.toString(),
+      category: p.category ?? '',
+      brand: p.brand ?? '',
+      status: p.status ?? 'active',
+      taxClass: p.taxClass ?? 'standard',
+      currency: p.currency ?? 'TRY',
+      active: p.active,
+    })
     setSaveErr(null)
   }
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ name: '', price: '', category: '' })
+    setForm(emptyProductForm())
     setSaveErr(null)
     setShowCreate(true)
+  }
+
+  const buildPayload = () => {
+    const safeTrim = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
+    const price = Number.parseFloat(form.price)
+    if (Number.isNaN(price) || price < 0) throw new Error('Geçerli bir fiyat girin')
+    const category = safeTrim(form.category)
+    if (!category) throw new Error('Kategori zorunlu')
+    return {
+      name: safeTrim(form.name),
+      price,
+      category,
+      imageUrl: safeTrim(form.imageUrl) || null,
+      description: safeTrim(form.description) || null,
+      slug: safeTrim(form.slug) || null,
+      brand: safeTrim(form.brand) || null,
+      status: form.status,
+      taxClass: form.taxClass,
+      currency: safeTrim(form.currency).toUpperCase() || 'TRY',
+      active: form.active,
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true); setSaveErr(null)
-    const payload = { name: form.name, price: parseFloat(form.price), category: form.category }
+    let payload: Record<string, unknown>
+    try {
+      payload = buildPayload()
+    } catch (err) {
+      setSaveErr(err instanceof Error ? err.message : 'Validasyon hatası')
+      setSaving(false)
+      return
+    }
     try {
       const url = editing ? `${PRODUCT_API}/api/v1/products/${editing.id}` : `${PRODUCT_API}/api/v1/products`
       const r = await fetch(url, { method: editing ? 'PUT' : 'POST', headers: hdrs(), body: JSON.stringify(payload) })
@@ -210,10 +299,71 @@ export default function App() {
     { name: 'Settings', icon: Settings },
   ]
 
+  const productFormFields = (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Ürün adı</label>
+        <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">URL slug</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 font-mono text-xs" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="Boş: isimden üretilir" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Görsel URL</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Fiyat</label>
+          <input type="number" step="0.01" min="0" className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Kategori</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Marka</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} placeholder="İsteğe bağlı" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Para birimi</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 uppercase" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} maxLength={3} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Liste durumu</label>
+          <select className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Yayında (active)</option>
+            <option value="draft">Taslak (draft)</option>
+            <option value="archived">Arşiv (archived)</option>
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium text-gray-600 mb-1">Vergi sınıfı</label>
+          <input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.taxClass} onChange={e => setForm({ ...form, taxClass: e.target.value })} placeholder="standard" />
+        </div>
+      </div>
+      {form.imageUrl && (
+        <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+          <img src={form.imageUrl} alt="Ürün görseli önizleme" className="w-full h-40 object-cover" />
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input id="product-active" type="checkbox" className="rounded border-gray-300 text-indigo-600" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} />
+        <label htmlFor="product-active" className="text-sm text-gray-700">Aktif (satışa açık)</label>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama ve özellikler</label>
+        <textarea rows={5} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 resize-y min-h-[120px]" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Detaylı açıklama, teknik özellikler..." />
+      </div>
+      <p className="text-[11px] text-gray-400">Slug boş bırakılırsa sunucu isimden üretir. Düzenlemede isim değişince slug, slug alanını boş bıraktıysanız yeniden üretilir.</p>
+    </div>
+  )
+
   const Modal = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={() => { setEditing(null); setShowCreate(false); setDelTarget(null) }} />
-      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md p-6">
+      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button onClick={() => { setEditing(null); setShowCreate(false); setDelTarget(null) }} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
@@ -275,8 +425,8 @@ export default function App() {
               <tr key={p.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 text-gray-400 font-mono text-xs">#{p.id.toString().padStart(4, '0')}</td>
                 <td className="px-5 py-3 font-medium text-gray-800">{p.name}</td>
-                <td className="px-5 py-3"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-xs font-medium">{p.category}</span></td>
-                <td className="px-5 py-3 text-right font-medium text-gray-700">{p.price.toLocaleString('tr-TR')} TRY</td>
+                <td className="px-5 py-3"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-xs font-medium">{p.category ?? '—'}</span></td>
+                <td className="px-5 py-3 text-right font-medium text-gray-700">{p.price.toLocaleString('tr-TR')} {p.currency}</td>
               </tr>
             ))}
           </tbody>
@@ -302,18 +452,26 @@ export default function App() {
         </div>
         {prodsErr && <div className="p-4 text-sm text-red-600 bg-red-50">{prodsErr}</div>}
         <table className="w-full text-sm">
-          <thead><tr className="bg-gray-50 text-left"><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase w-20">ID</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase">Name</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase">Category</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase text-right">Price</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase text-center w-24">Actions</th></tr></thead>
+          <thead><tr className="bg-gray-50 text-left"><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase w-20">ID</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase min-w-[140px]">Name</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Brand</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase">Category</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase text-center w-16">On</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase text-right">Price</th><th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase text-center w-24">Actions</th></tr></thead>
           <tbody className="divide-y divide-gray-50">
             {prodsLoading ? (
-              <tr><td colSpan={5} className="px-5 py-12 text-center text-gray-400"><RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />Loading...</td></tr>
+              <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400"><RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="px-5 py-12 text-center text-gray-400">No products found</td></tr>
+              <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">No products found</td></tr>
             ) : filtered.map(p => (
               <tr key={p.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">#{p.id.toString().padStart(4, '0')}</td>
-                <td className="px-5 py-3.5 font-medium text-gray-800">{p.name}</td>
-                <td className="px-5 py-3.5"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-xs font-medium">{p.category}</span></td>
-                <td className="px-5 py-3.5 text-right font-medium text-gray-700">{p.price.toLocaleString('tr-TR')} TRY</td>
+                <td className="px-5 py-3.5 font-medium text-gray-800">
+                  <span className="block">{p.name}</span>
+                  <span className="text-[10px] text-gray-400 font-mono font-normal">{p.slug}</span>
+                </td>
+                <td className="px-5 py-3.5 text-gray-600 text-sm hidden lg:table-cell">{p.brand ?? '—'}</td>
+                <td className="px-5 py-3.5"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-xs font-medium">{p.category ?? '—'}</span></td>
+                <td className="px-5 py-3.5">
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${p.status === 'active' ? 'bg-emerald-50 text-emerald-700' : p.status === 'draft' ? 'bg-amber-50 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{p.status}</span>
+                </td>
+                <td className="px-5 py-3.5 text-center">{p.active ? <CheckCircle2 className="w-4 h-4 text-emerald-500 inline" /> : <XCircle className="w-4 h-4 text-gray-300 inline" />}</td>
+                <td className="px-5 py-3.5 text-right font-medium text-gray-700">{p.price.toLocaleString('tr-TR')} {p.currency}</td>
                 <td className="px-5 py-3.5">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -445,17 +603,13 @@ export default function App() {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Product Edit Modal */}
       {editing && (
-        <Modal title="Edit Product">
+        <Modal title="Ürünü düzenle">
           <form onSubmit={handleSave} className="space-y-4">
-            <div><label className="block text-xs font-medium text-gray-600 mb-1">Name</label><input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="block text-xs font-medium text-gray-600 mb-1">Price</label><input type="number" step="0.01" min="0" className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required /></div>
-              <div><label className="block text-xs font-medium text-gray-600 mb-1">Category</label><input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required /></div>
-            </div>
+            {productFormFields}
             {saveErr && <div className="p-2.5 bg-red-50 text-red-600 rounded-lg text-xs">{saveErr}</div>}
             <div className="flex gap-3 pt-1">
-              <button type="button" onClick={() => setEditing(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Saving...' : 'Update'}</button>
+              <button type="button" onClick={() => setEditing(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+              <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Güncelle'}</button>
             </div>
           </form>
         </Modal>
@@ -463,17 +617,13 @@ export default function App() {
 
       {/* Create Product Modal */}
       {showCreate && (
-        <Modal title="Add Product">
+        <Modal title="Yeni ürün ekle">
           <form onSubmit={handleSave} className="space-y-4">
-            <div><label className="block text-xs font-medium text-gray-600 mb-1">Name</label><input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="block text-xs font-medium text-gray-600 mb-1">Price</label><input type="number" step="0.01" min="0" className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required /></div>
-              <div><label className="block text-xs font-medium text-gray-600 mb-1">Category</label><input className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required /></div>
-            </div>
+            {productFormFields}
             {saveErr && <div className="p-2.5 bg-red-50 text-red-600 rounded-lg text-xs">{saveErr}</div>}
             <div className="flex gap-3 pt-1">
-              <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Creating...' : 'Create'}</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+              <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Oluşturuluyor...' : 'Oluştur'}</button>
             </div>
           </form>
         </Modal>

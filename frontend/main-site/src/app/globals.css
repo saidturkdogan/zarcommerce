@@ -26,3 +26,21 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, sans-serif;
 }
+
+/* Tıklanabilir öğelerde el imleci (Tailwind preflight / tarayıcı varsayılanı genelde default kalır) */
+a[href],
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+select,
+summary,
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}

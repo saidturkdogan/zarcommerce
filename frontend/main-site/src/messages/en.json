@@ -2,7 +2,7 @@
   "HomePage": {
     "title": "Create Your Own <span>Luck</span> in Shopping",
     "subtitle": "Welcome to the next-generation e-commerce experience filled with hundreds of thousands of products, personalized offers, and surprise discounts.",
-    "slogan": "The new way of shopping with n11",
+    "slogan": "The new way of shopping with ZarCommerce",
     "searchPlaceholder": "What are you looking for? (e.g., iPhone 15)",
     "searchButton": "Search",
     "campaigns": "Campaigns",
@@ -13,5 +13,14 @@
     "dealsOfDay": "Deals of the Day",
     "seeAll": "See All →",
     "discount": "25% Off"
+  },
+  "Auth": {
+    "namePlaceholder": "Full Name",
+    "emailPlaceholder": "Email Address",
+    "passwordPlaceholder": "Password",
+    "loginButton": "Log In",
+    "registerButton": "Create Account",
+    "missingFieldsError": "Please fill in all required fields.",
+    "connectionError": "Connection error. Is the server running?"
   }
 }
