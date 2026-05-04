@@ -1,9 +1,18 @@
 server:
   port: 8080
+  error:
+    whitelabel:
+      enabled: false
+    include-message: always
 
 spring:
   application:
     name: api-gateway
+  thymeleaf:
+    cache: true
+  mvc:
+    problemdetails:
+      enabled: true
   cloud:
     gateway:
       # spring-cloud-starter-gateway-server-webmvc (Boot 4+) — route'lar burada tanımlanır.

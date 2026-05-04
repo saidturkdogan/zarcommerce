@@ -4,9 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
 import { ShoppingBag, CreditCard, Shield, Lock, ChevronRight, Package, Minus, Plus, Trash2, ArrowLeft, Loader2, LogIn } from 'lucide-react';
 import { useCart } from '../../../lib/cart';
-import { SESSION_JWT_KEY, USER_API_BASE } from '../../../lib/api';
-
-const PAYMENT_API_BASE = process.env.NEXT_PUBLIC_PAYMENT_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+import { PAYMENT_API_BASE, SESSION_JWT_KEY, USER_API_BASE } from '../../../lib/api';
 
 type SessionUser = { userId: number; email: string; firstName: string; lastName: string };
 

@@ -4,8 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { Link } from '../../../../i18n/routing';
 import { CheckCircle2, XCircle, Loader2, ShoppingBag, ArrowLeft, Package, CreditCard, Clock } from 'lucide-react';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+import { PAYMENT_API_BASE } from '../../../../lib/api';
 
 interface PaymentDetail {
   id: number;
@@ -30,7 +29,7 @@ function PaymentResultContent() {
 
   useEffect(() => {
     if (paymentId) {
-      fetch(`${API_BASE_URL}/api/v1/payments/${paymentId}`)
+      fetch(`${PAYMENT_API_BASE}/api/v1/payments/${paymentId}`)
         .then(res => res.json())
         .then(data => {
           setPayment(data);
