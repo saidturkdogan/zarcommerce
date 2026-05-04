@@ -16,9 +16,9 @@ spring:
   cloud:
     gateway:
       # spring-cloud-starter-gateway-server-webmvc (Boot 4+) — route'lar burada tanımlanır.
-      # Eski `spring.cloud.gateway.routes` (reactive) bu modda yüklenmez; 404 üretirdi.
+      # Property path: spring.cloud.gateway.server.mvc.routes ("webmvc" değil "mvc").
       server:
-        webmvc:
+        mvc:
           routes:
             - id: user-auth-service
               uri: http://user-service:8081
