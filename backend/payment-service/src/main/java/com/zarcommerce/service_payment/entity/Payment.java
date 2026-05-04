@@ -26,6 +26,10 @@ public class Payment {
     @Column(unique = true)
     private String token;
 
+    /** Set when checkout is tied to an order; null for standalone Iyzico checkout. */
+    @Column(name = "order_id")
+    private Long orderId;
+
     private String basketId;
 
     @Column(nullable = false, precision = 12, scale = 2)
