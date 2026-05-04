@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth/admin")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:8088", "http://localhost:3000", "http://localhost"})
+@CrossOrigin(origins = "*")
 public class AdminAuthController {
 
     private final AdminAuthService adminAuthService;
