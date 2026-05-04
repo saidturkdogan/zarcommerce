@@ -1,11 +1,17 @@
 /**
  * API kökü:
  * - `https://...` açıkça verildiyse doğrudan kullanılır.
- * - Vercel (HTTPS) + backend sadece HTTP ise mixed content olmaması için `/api/gw` kullanılır
+ * - Tarayıcı HTTPS üzerindeyse ve backend sadece HTTP ise mixed content
+ *   olmaması için `/api/gw` proxy'si kullanılır
  *   (`next.config.ts` rewrites → BACKEND_API_ORIGIN).
- * - Yerel: doğrudan gateway (varsayılan HTTP IP veya .env.local).
+ * - Yerel (HTTP): doğrudan gateway (varsayılan HTTP IP veya .env.local).
  */
 const DEFAULT_DIRECT_HTTP = "http://209.38.224.246:8080";
+
+/** Tarayıcıda HTTPS üzerinde çalışıyorsak true döner. */
+const isBrowserHttps =
+  typeof window !== "undefined" &&
+  window.location.protocol === "https:";
 
 function resolveGatewayOrigin(): string {
   const explicit =
@@ -16,8 +22,8 @@ function resolveGatewayOrigin(): string {
     if (explicit.startsWith("https://")) {
       return explicit;
     }
-    // Vercel sayfası HTTPS; http:// backend tarayıcıda bloklanır → aynı kök proxy
-    if (explicit.startsWith("http://") && process.env.VERCEL) {
+    // Tarayıcı HTTPS üzerindeyse HTTP backend'e doğrudan istek bloklanır → proxy kullan
+    if (explicit.startsWith("http://") && isBrowserHttps) {
       return "/api/gw";
     }
     return explicit;
@@ -27,7 +33,8 @@ function resolveGatewayOrigin(): string {
     return "/api/gw";
   }
 
-  if (process.env.VERCEL) {
+  // Tarayıcı HTTPS üzerindeyse her zaman proxy'den geç (mixed content engeli)
+  if (isBrowserHttps) {
     return "/api/gw";
   }
 
